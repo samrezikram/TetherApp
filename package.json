@@ -1,0 +1,102 @@
+{
+  "name": "wdk-wallet-app",
+  "version": "0.1.0",
+  "private": true,
+  "main": "node_modules/expo/AppEntry.js",
+  "scripts": {
+    "start": "expo start --dev-client",
+    "ios": "expo run:ios",
+    "android": "expo run:android",
+    "prebuild": "expo prebuild",
+    "lint": "eslint . --ext .ts,.tsx",
+    "typecheck": "tsc --noEmit",
+    "test": "jest",
+    "test:coverage": "jest --coverage",
+    "e2e:ios": "maestro test e2e/wallet-create.yaml",
+    "eas:build:ios": "eas build --platform ios --profile production --non-interactive",
+    "eas:build:android": "eas build --platform android --profile production --non-interactive"
+  },
+  "dependencies": {
+    "@craftzdog/react-native-buffer": "latest",
+    "@react-native-async-storage/async-storage": "latest",
+    "@react-native-clipboard/clipboard": "latest",
+    "@react-navigation/bottom-tabs": "latest",
+    "@react-navigation/native": "latest",
+    "@react-navigation/native-stack": "latest",
+    "@tetherto/pear-wrk-wdk": "latest",
+    "@tetherto/wdk-react-native-provider": "latest",
+    "@tetherto/wdk-secret-manager": "latest",
+    "b4a": "latest",
+    "bip39": "latest",
+    "browserify-zlib": "latest",
+    "decimal.js": "latest",
+    "events": "latest",
+    "expo": "latest",
+    "expo-barcode-scanner": "latest",
+    "expo-build-properties": "latest",
+    "expo-camera": "latest",
+    "expo-constants": "latest",
+    "expo-dev-client": "latest",
+    "expo-local-authentication": "latest",
+    "expo-secure-store": "latest",
+    "expo-status-bar": "latest",
+    "http2-wrapper": "latest",
+    "https-browserify": "latest",
+    "lucide-react-native": "latest",
+    "nice-grpc-web": "latest",
+    "path-browserify": "latest",
+    "process": "latest",
+    "querystring-es3": "latest",
+    "react": "latest",
+    "react-native": "latest",
+    "react-native-bare-kit": "latest",
+    "react-native-crypto": "latest",
+    "react-native-device-info": "latest",
+    "react-native-get-random-values": "latest",
+    "react-native-keychain": "latest",
+    "react-native-qrcode-svg": "latest",
+    "react-native-gesture-handler": "latest",
+    "react-native-safe-area-context": "latest",
+    "react-native-screens": "latest",
+    "react-native-svg": "latest",
+    "react-native-tcp-socket": "latest",
+    "react-native-url-polyfill": "latest",
+    "sodium-javascript": "latest",
+    "stream-browserify": "latest",
+    "stream-http": "latest",
+    "zod": "latest",
+    "zustand": "latest"
+  },
+  "devDependencies": {
+    "@babel/core": "latest",
+    "@react-native/eslint-config": "latest",
+    "@testing-library/react-native": "latest",
+    "@types/jest": "latest",
+    "@types/react": "latest",
+    "@types/react-native": "latest",
+    "babel-plugin-module-resolver": "latest",
+    "eslint": "latest",
+    "jest": "latest",
+    "jest-expo": "latest",
+    "maestro": "latest",
+    "typescript": "latest"
+  },
+  "jest": {
+    "preset": "jest-expo",
+    "setupFilesAfterEnv": [
+      "<rootDir>/tests/setup/jest.setup.ts"
+    ],
+    "collectCoverageFrom": [
+      "src/**/*.{ts,tsx}",
+      "!src/types/**"
+    ],
+    "coverageThreshold": {
+      "global": {
+        "branches": 80,
+        "functions": 80,
+        "lines": 80,
+        "statements": 80
+      }
+    }
+  }
+}

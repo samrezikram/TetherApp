@@ -1,0 +1,7 @@
+appId: com.tetherapp.wdkwallet
+---
+- launchApp
+- assertVisible: "Create wallet"
+- tapOn: "Create Wallet"
+- assertVisible:
+    text: "Wallet locked|Portfolio"

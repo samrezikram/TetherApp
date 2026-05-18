@@ -1,0 +1,58 @@
+{
+  "expo": {
+    "name": "WDK Wallet",
+    "slug": "wdk-wallet-app",
+    "scheme": "wdkwallet",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "supportsTablet": false,
+      "deploymentTarget": "15.1",
+      "bundleIdentifier": "com.tetherapp.wdkwallet",
+      "infoPlist": {
+        "NSFaceIDUsageDescription": "Use Face ID to unlock your wallet.",
+        "NSCameraUsageDescription": "Use the camera to scan wallet addresses and payment QR codes."
+      }
+    },
+    "android": {
+      "package": "com.tetherapp.wdkwallet",
+      "permissions": [
+        "CAMERA",
+        "USE_BIOMETRIC",
+        "USE_FINGERPRINT"
+      ]
+    },
+    "plugins": [
+      "expo-dev-client",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "minSdkVersion": 29
+          },
+          "ios": {
+            "deploymentTarget": "15.1"
+          }
+        }
+      ],
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Use Face ID to unlock your wallet."
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Use the camera to scan wallet addresses and payment QR codes."
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "wdk-wallet-app"
+      }
+    }
+  }
+}
