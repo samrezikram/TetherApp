@@ -1,7 +1,9 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Alert, View } from "react-native";
 import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useWallet } from "@tetherto/wdk-react-native-provider";
+import type { RootStackParamList } from "@/app/navigation/types";
 import { Button } from "@/design-system/components/Button";
 import { Card } from "@/design-system/components/Card";
 import { Screen } from "@/design-system/components/Screen";
@@ -9,11 +11,24 @@ import { Text } from "@/design-system/components/Text";
 import { Input } from "@/design-system/components/Input";
 import { useSecureSession } from "@/hooks/useSecureSession";
 import { logger } from "@/infrastructure/logging/logger";
+import type { WalletSummary } from "@/domain/wallet/types";
+import { deleteSecret, getSecret, storeSecret } from "@/services/secure-storage/keychainStorage";
+import { requireBiometric } from "@/services/biometric/biometricService";
+import {
+  createWalletId,
+  deleteRegisteredWallet,
+  getActiveWalletId,
+  listRegisteredWallets,
+  setActiveWalletId,
+  upsertRegisteredWallet,
+} from "@/services/wallets/walletRegistry";
+import { generateSeedPhrase, type SeedPhraseLength } from "@/services/wallets/seedPhrase";
 
 export function WalletHomeScreen() {
-  const navigation = useNavigation();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const {
     balances,
+    clearWallet,
     createWallet,
     isInitialized,
     refreshWalletBalance,
@@ -22,12 +37,28 @@ export function WalletHomeScreen() {
   } = useWallet();
   const secureSession = useSecureSession();
   const [walletName, setWalletName] = useState("Main Wallet");
+  const [seedPhraseLength, setSeedPhraseLength] = useState<SeedPhraseLength>(12);
+  const [wallets, setWallets] = useState<WalletSummary[]>([]);
+  const [activeWalletId, setActiveWalletIdState] = useState<string | null>(null);
   const [isBusy, setIsBusy] = useState(false);
 
   const balanceRows = useMemo(
     () => balances?.list ?? [],
     [balances?.list],
   );
+
+  useEffect(() => {
+    void refreshRegisteredWallets();
+  }, []);
+
+  async function refreshRegisteredWallets() {
+    const [registeredWallets, activeId] = await Promise.all([
+      listRegisteredWallets(),
+      getActiveWalletId(),
+    ]);
+    setWallets(registeredWallets);
+    setActiveWalletIdState(activeId);
+  }
 
   async function handleUnlock() {
     setIsBusy(true);
@@ -44,14 +75,83 @@ export function WalletHomeScreen() {
   async function handleCreateWallet() {
     setIsBusy(true);
     try {
-      await createWallet({ name: walletName });
+      const walletId = createWalletId();
+      const mnemonic = generateSeedPhrase(seedPhraseLength);
+      await createWallet({ mnemonic, name: walletName });
+      await storeSecret(`wallet:${walletId}:mnemonic`, mnemonic, {
+        requireBiometry: true,
+      });
+      await upsertRegisteredWallet({
+        activeAccountIndex: 0,
+        createdAt: new Date().toISOString(),
+        id: walletId,
+        imported: false,
+        name: walletName,
+      });
       await refreshWalletBalance();
+      await refreshRegisteredWallets();
+      navigation.navigate("RecoveryPhrase", { walletId });
     } catch (error) {
       logger.error("Create wallet failed", error);
       Alert.alert("Wallet creation failed", "Check WDK configuration and try again.");
     } finally {
       setIsBusy(false);
     }
+  }
+
+  async function handleSwitchWallet(walletId: string) {
+    setIsBusy(true);
+    try {
+      await requireBiometric("unlock");
+      const selectedWallet = wallets.find((candidate) => candidate.id === walletId);
+      const mnemonic = await getSecret(`wallet:${walletId}:mnemonic`, {
+        requireBiometry: true,
+      });
+
+      if (!selectedWallet || !mnemonic) {
+        throw new Error("Wallet secret not found");
+      }
+
+      await clearWallet();
+      await createWallet({ mnemonic, name: selectedWallet.name });
+      await setActiveWalletId(walletId);
+      await refreshWalletBalance();
+      await refreshRegisteredWallets();
+    } catch (error) {
+      logger.error("Switch wallet failed", error);
+      Alert.alert("Switch failed", "Unable to unlock and switch to that wallet.");
+    } finally {
+      setIsBusy(false);
+    }
+  }
+
+  async function handleDeleteWallet(walletId: string) {
+    Alert.alert("Delete wallet", "This removes the local encrypted wallet copy from this device.", [
+      { style: "cancel", text: "Cancel" },
+      {
+        style: "destructive",
+        text: "Delete",
+        onPress: () => {
+          void (async () => {
+            setIsBusy(true);
+            try {
+              await requireBiometric("settings");
+              await deleteSecret(`wallet:${walletId}:mnemonic`);
+              await deleteRegisteredWallet(walletId);
+              if (walletId === activeWalletId) {
+                await clearWallet();
+              }
+              await refreshRegisteredWallets();
+            } catch (error) {
+              logger.error("Delete wallet failed", error);
+              Alert.alert("Delete failed", "Unable to delete this wallet.");
+            } finally {
+              setIsBusy(false);
+            }
+          })();
+        },
+      },
+    ]);
   }
 
   if (!isInitialized) {
@@ -67,18 +167,35 @@ export function WalletHomeScreen() {
       <Screen>
         <Text variant="headlineLarge">Create wallet</Text>
         <Text color="textMuted">
-          A new recovery phrase is generated by WDK and stored through the
-          secure wallet provider.
+          A recovery phrase is generated locally, encrypted by WDK, and stored
+          behind biometric Keychain access for wallet switching.
         </Text>
         <Input
           label="Wallet name"
           onChangeText={setWalletName}
           value={walletName}
         />
+        <View style={{ flexDirection: "row", gap: 12 }}>
+          <Button
+            onPress={() => setSeedPhraseLength(12)}
+            title="12 words"
+            variant={seedPhraseLength === 12 ? "primary" : "outline"}
+          />
+          <Button
+            onPress={() => setSeedPhraseLength(24)}
+            title="24 words"
+            variant={seedPhraseLength === 24 ? "primary" : "outline"}
+          />
+        </View>
         <Button
           isLoading={isBusy}
           onPress={handleCreateWallet}
           title="Create Wallet"
+        />
+        <Button
+          onPress={() => navigation.navigate("ImportWallet")}
+          title="Import Wallet"
+          variant="outline"
         />
       </Screen>
     );
@@ -125,6 +242,35 @@ export function WalletHomeScreen() {
         title="Refresh Balances"
         variant="outline"
       />
+      <Text variant="titleLarge">Wallets</Text>
+      {wallets.map((registeredWallet) => (
+        <Card key={registeredWallet.id}>
+          <Text variant="titleSmall">
+            {registeredWallet.name}
+            {registeredWallet.id === activeWalletId ? " (active)" : ""}
+          </Text>
+          <Text color="textMuted" variant="bodySmall">
+            {registeredWallet.imported ? "Imported" : "Created"} on{" "}
+            {new Date(registeredWallet.createdAt).toLocaleDateString()}
+          </Text>
+          <View style={{ flexDirection: "row", gap: 8, marginTop: 12 }}>
+            <Button
+              disabled={registeredWallet.id === activeWalletId || isBusy}
+              onPress={() => handleSwitchWallet(registeredWallet.id)}
+              size="small"
+              title="Switch"
+              variant="outline"
+            />
+            <Button
+              disabled={isBusy}
+              onPress={() => handleDeleteWallet(registeredWallet.id)}
+              size="small"
+              title="Delete"
+              variant="destructive"
+            />
+          </View>
+        </Card>
+      ))}
       {balanceRows.map((balance: { denomination?: string; value?: string }, index: number) => (
         <Card key={`${balance.denomination ?? "asset"}-${index}`}>
           <Text variant="titleSmall">{balance.denomination ?? "Asset"}</Text>

@@ -8,7 +8,9 @@ export type AppTabParamList = {
 
 export type RootStackParamList = {
   AppTabs: NavigatorScreenParams<AppTabParamList> | undefined;
+  ImportWallet: undefined;
   Receive: { address?: string; network?: string } | undefined;
+  RecoveryPhrase: { walletId: string };
   Scanner: { mode: "address" | "payment-uri" };
   Send:
     | {

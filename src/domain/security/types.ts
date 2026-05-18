@@ -1,5 +1,6 @@
 export type SecureSecretKey =
   | `wallet:${string}:mnemonic`
+  | `wallet:${string}:mnemonic:${string}`
   | `wallet:${string}:metadata`
   | "session:unlock";
 

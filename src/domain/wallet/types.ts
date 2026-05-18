@@ -14,6 +14,7 @@ export type WalletSummary = {
   name: string;
   createdAt: string;
   activeAccountIndex: number;
+  imported: boolean;
 };
 
 export type WalletBalance = {
