@@ -1,5 +1,5 @@
 module.exports = {
-  preset: "@react-native/jest-preset",
+  preset: "react-native",
   setupFilesAfterEnv: ["<rootDir>/tests/setup/jest.setup.ts"],
   collectCoverageFrom: ["src/**/*.{ts,tsx}", "!src/types/**"],
   coverageThreshold: {
