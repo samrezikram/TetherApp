@@ -23,6 +23,8 @@ and biometric authorization are enforced in one place.
 ## Security Model
 
 - Sensitive storage uses `react-native-keychain`.
+- Recovery phrases for app-level wallet switching are stored per-wallet in
+  Keychain entries protected by biometric/device-passcode access.
 - App unlock does not authorize signing by itself.
 - Transaction signing requires a fresh secure session and biometric prompt.
 - Inactivity locks the app after `EXPO_PUBLIC_BIOMETRIC_TIMEOUT`, defaulting to
@@ -30,6 +32,9 @@ and biometric authorization are enforced in one place.
 - Backgrounding longer than 30 seconds locks the app.
 - Logger redacts mnemonic-like strings, keys, tokens, and 32-byte hex secrets.
 - Direct `console.*` calls are blocked in `src` except the logger.
+- Public-key pinning is initialized through
+  `react-native-ssl-public-key-pinning`. Production builds require
+  `EXPO_PUBLIC_WDK_INDEXER_PIN_1` and `EXPO_PUBLIC_WDK_INDEXER_PIN_2`.
 
 ## Git Workflow
 

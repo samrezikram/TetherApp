@@ -1,20 +1,30 @@
-export type CertificatePin = {
-  host: string;
-  publicKeyHashes: string[];
-};
+import { initializeSslPinning } from "react-native-ssl-public-key-pinning";
+import { env } from "@/infrastructure/env/env";
 
-export const certificatePins: CertificatePin[] = [
-  {
-    host: "wdk-api.tether.io",
-    publicKeyHashes: [],
-  },
-];
+let initialized = false;
 
-export function assertPinnedHost(url: string): void {
-  const host = new URL(url).host;
-  const configured = certificatePins.some((pin) => pin.host === host);
-
-  if (!configured) {
-    throw new Error(`No certificate pin configured for ${host}`);
+export async function initializeCertificatePinning(): Promise<void> {
+  if (initialized) {
+    return;
   }
+
+  const host = new URL(env.indexerBaseUrl).host;
+  const publicKeyHashes = [env.indexerPinOne, env.indexerPinTwo].filter(
+    (value): value is string => Boolean(value),
+  );
+
+  if (publicKeyHashes.length < 2) {
+    if (env.appEnv === "production") {
+      throw new Error("Production certificate pinning requires two public key hashes");
+    }
+    return;
+  }
+
+  await initializeSslPinning({
+    [host]: {
+      publicKeyHashes,
+    },
+  });
+
+  initialized = true;
 }

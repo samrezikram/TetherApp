@@ -1,0 +1,12 @@
+appId: com.tetherapp.wdkwallet
+---
+- launchApp
+- assertVisible:
+    text: "Portfolio|Wallet locked"
+- tapOn: "Send"
+- tapOn: "Recipient"
+- inputText: "0x742d35Cc6634C0532925a3b844Bc454e4438f44e"
+- tapOn: "Continue"
+- tapOn: "Amount"
+- inputText: "1"
+- assertVisible: "Estimate Fee"

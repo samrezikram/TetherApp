@@ -5,9 +5,16 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AppThemeProvider } from "@/design-system/theme/ThemeProvider";
 import { wdkConfig } from "@/services/wdk/wdkConfig";
 import { bindAppStateSessionLock } from "@/services/biometric/sessionService";
+import { initializeCertificatePinning } from "@/infrastructure/api/certificatePinning";
+import { logger } from "@/infrastructure/logging/logger";
 
 export function AppProviders({ children }: { children: React.ReactNode }) {
   useEffect(() => bindAppStateSessionLock(), []);
+  useEffect(() => {
+    void initializeCertificatePinning().catch((error) => {
+      logger.error("Certificate pinning initialization failed", error);
+    });
+  }, []);
 
   return (
     <SafeAreaProvider>

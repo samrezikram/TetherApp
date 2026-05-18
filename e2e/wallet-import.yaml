@@ -1,0 +1,13 @@
+appId: com.tetherapp.wdkwallet
+---
+- launchApp
+- tapOn: "Import Wallet"
+- tapOn: "Wallet name"
+- eraseText
+- inputText: "Test Import"
+- tapOn:
+    text: "Recovery phrase.*"
+- inputText: "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about"
+- tapOn: "Import Wallet"
+- assertVisible:
+    text: "Wallet locked|Portfolio|Activity"

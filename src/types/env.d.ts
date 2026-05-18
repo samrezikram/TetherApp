@@ -8,5 +8,7 @@ declare namespace NodeJS {
     EXPO_PUBLIC_TRON_API_SECRET?: string;
     EXPO_PUBLIC_WDK_INDEXER_API_KEY?: string;
     EXPO_PUBLIC_WDK_INDEXER_BASE_URL?: string;
+    EXPO_PUBLIC_WDK_INDEXER_PIN_1?: string;
+    EXPO_PUBLIC_WDK_INDEXER_PIN_2?: string;
   }
 }

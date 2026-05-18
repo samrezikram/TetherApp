@@ -20,6 +20,8 @@ const EnvSchema = z.object({
   ethRpcUrl: z.string().url().optional(),
   indexerApiKey: z.string().min(1).optional(),
   indexerBaseUrl: z.string().url().default("https://wdk-api.tether.io"),
+  indexerPinOne: z.string().min(1).optional(),
+  indexerPinTwo: z.string().min(1).optional(),
   tronApiKey: z.string().optional(),
   tronApiSecret: z.string().optional(),
 });
@@ -31,6 +33,8 @@ export const env = EnvSchema.parse({
   ethRpcUrl: process.env.EXPO_PUBLIC_ETH_RPC_URL,
   indexerApiKey: process.env.EXPO_PUBLIC_WDK_INDEXER_API_KEY,
   indexerBaseUrl: process.env.EXPO_PUBLIC_WDK_INDEXER_BASE_URL,
+  indexerPinOne: process.env.EXPO_PUBLIC_WDK_INDEXER_PIN_1,
+  indexerPinTwo: process.env.EXPO_PUBLIC_WDK_INDEXER_PIN_2,
   tronApiKey: process.env.EXPO_PUBLIC_TRON_API_KEY,
   tronApiSecret: process.env.EXPO_PUBLIC_TRON_API_SECRET,
 });

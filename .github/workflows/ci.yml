@@ -22,6 +22,11 @@ jobs:
       - run: npm run test:coverage
       - name: Secret scan
         uses: gitleaks/gitleaks-action@v2
+      - name: Upload coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage
 
   eas-build:
     needs: quality
