@@ -18,5 +18,5 @@ export type RootStackParamList = {
         recipient?: string;
       }
     | undefined;
-  TransactionDetails: { transactionId: string };
+  TransactionDetails: { transactionId: string; hash?: string };
 };

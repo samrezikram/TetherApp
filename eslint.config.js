@@ -5,6 +5,7 @@ const tsPlugin = require("@typescript-eslint/eslint-plugin");
 const globals = {
   __DEV__: "readonly",
   afterEach: "readonly",
+  beforeEach: "readonly",
   console: "readonly",
   describe: "readonly",
   expect: "readonly",
