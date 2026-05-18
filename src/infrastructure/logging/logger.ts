@@ -10,12 +10,26 @@ const secretPatterns: RegExp[] = [
 
 export function redactSecrets(input: unknown): string {
   const text =
-    typeof input === "string" ? input : JSON.stringify(input, jsonRedactor, 2);
+    typeof input === "string"
+      ? input
+      : JSON.stringify(normalizeLogValue(input), jsonRedactor, 2);
 
   return secretPatterns.reduce(
     (current, pattern) => current.replace(pattern, "[REDACTED]"),
     text ?? "",
   );
+}
+
+function normalizeLogValue(input: unknown): unknown {
+  if (input instanceof Error) {
+    return {
+      name: input.name,
+      message: input.message,
+      stack: input.stack,
+    };
+  }
+
+  return input;
 }
 
 function jsonRedactor(key: string, value: unknown) {

@@ -32,7 +32,6 @@
     "decimal.js": "10.6.0",
     "events": "3.3.0",
     "expo": "55.0.24",
-    "expo-barcode-scanner": "13.0.1",
     "expo-build-properties": "55.0.14",
     "expo-camera": "55.0.18",
     "expo-constants": "55.0.16",

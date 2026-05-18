@@ -14,7 +14,7 @@ const numberString = z
 const EnvSchema = z.object({
   appEnv: z
     .enum(["development", "preview", "production", "test"])
-    .default("production"),
+    .default("development"),
   biometricTimeoutSeconds: numberString,
   enableTestnet: booleanString,
   ethRpcUrl: z.string().url().optional(),
