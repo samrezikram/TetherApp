@@ -14,7 +14,27 @@ export const radius = {
   pill: 999,
 } as const;
 
-export const lightTheme = {
+type ColorTokens = {
+  background: string;
+  border: string;
+  danger: string;
+  primary: string;
+  primaryText: string;
+  success: string;
+  surface: string;
+  surfaceMuted: string;
+  text: string;
+  textMuted: string;
+  warning: string;
+};
+
+export type Theme = {
+  colors: ColorTokens;
+  radius: typeof radius;
+  spacing: typeof spacing;
+};
+
+export const lightTheme: Theme = {
   colors: {
     background: "#F7F8FA",
     border: "#D8DEE8",
@@ -30,9 +50,9 @@ export const lightTheme = {
   },
   radius,
   spacing,
-} as const;
+};
 
-export const darkTheme = {
+export const darkTheme: Theme = {
   colors: {
     background: "#101316",
     border: "#303840",
@@ -48,6 +68,4 @@ export const darkTheme = {
   },
   radius,
   spacing,
-} as const;
-
-export type Theme = typeof lightTheme;
+};

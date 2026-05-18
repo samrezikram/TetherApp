@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { Alert, View } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import type { RootStackParamList } from "@/app/navigation/types";
 import { Button } from "@/design-system/components/Button";
 import { Card } from "@/design-system/components/Card";
 import { Input } from "@/design-system/components/Input";
@@ -18,7 +20,7 @@ type RouteParams = {
 };
 
 export function SendScreen() {
-  const navigation = useNavigation();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route = useRoute();
   const params = (route.params ?? {}) as RouteParams;
   const [recipient, setRecipient] = useState(params.recipient ?? "");
@@ -83,7 +85,7 @@ export function SendScreen() {
       />
       <View style={{ flexDirection: "row", gap: 12 }}>
         <Button
-          onPress={() => navigation.navigate("Scanner" as never, { mode: "address" } as never)}
+          onPress={() => navigation.navigate("Scanner", { mode: "address" })}
           title="Scan"
           variant="secondary"
         />

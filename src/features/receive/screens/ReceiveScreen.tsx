@@ -10,7 +10,7 @@ import { Text } from "@/design-system/components/Text";
 
 export function ReceiveScreen() {
   const { addresses } = useWallet();
-  const firstAddress = addresses?.list?.[0]?.address ?? "";
+  const firstAddress = Object.values(addresses ?? {})[0] ?? "";
 
   function copyAddress() {
     Clipboard.setString(firstAddress);

@@ -1,7 +1,5 @@
-import type { Config } from "jest";
-
-const config: Config = {
-  preset: "jest-expo",
+module.exports = {
+  preset: "@react-native/jest-preset",
   setupFilesAfterEnv: ["<rootDir>/tests/setup/jest.setup.ts"],
   collectCoverageFrom: ["src/**/*.{ts,tsx}", "!src/types/**"],
   coverageThreshold: {
@@ -16,5 +14,3 @@ const config: Config = {
     "^@/(.*)$": "<rootDir>/src/$1",
   },
 };
-
-export default config;

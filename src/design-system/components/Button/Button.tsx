@@ -70,7 +70,7 @@ export function Button({
           height: heights[size],
           opacity: isDisabled ? 0.5 : pressed ? 0.82 : 1,
         },
-        style,
+        typeof style === "function" ? style({ pressed }) : style,
       ]}
     >
       {isLoading ? (

@@ -16,6 +16,10 @@ export function parseQrPayload(payload: string): ParsedQrPayload {
   }
 
   const [address, query] = rest.split("?");
+  if (!address) {
+    return { address: trimmed };
+  }
+
   const params = new URLSearchParams(query);
 
   const amount = params.get("amount");

@@ -1,3 +1,12 @@
+jest.mock("@/infrastructure/env/env", () => ({
+  env: {
+    appEnv: "test",
+    biometricTimeoutSeconds: 300,
+    enableTestnet: false,
+    indexerBaseUrl: "https://wdk-api.tether.io",
+  },
+}));
+
 jest.mock("expo-local-authentication", () => ({
   authenticateAsync: jest.fn(async () => ({ success: true })),
   hasHardwareAsync: jest.fn(async () => true),

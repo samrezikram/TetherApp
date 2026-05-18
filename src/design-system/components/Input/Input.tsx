@@ -4,7 +4,7 @@ import { Text } from "@/design-system/typography/Text";
 import { useTheme } from "@/design-system/theme/ThemeProvider";
 
 type InputProps = TextInputProps & {
-  error?: string;
+  error?: string | undefined;
   label: string;
 };
 
