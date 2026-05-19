@@ -9,7 +9,7 @@ iteration.
 
 ## Boundaries
 
-- UI lives in `src/features` and `src/design-system`.
+- UI lives in `src/features` and reusable primitives are exposed from `src/design-toolkit`.
 - WDK calls live under `src/services/wdk`.
 - Indexer API calls live under `src/services/indexer`.
 - Secrets live behind `src/services/secure-storage`.

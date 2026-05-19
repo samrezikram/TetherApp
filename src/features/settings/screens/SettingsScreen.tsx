@@ -1,10 +1,7 @@
 import React from "react";
 import { Alert } from "react-native";
 import { useWallet } from "@tetherto/wdk-react-native-provider";
-import { Button } from "@/design-system/components/Button";
-import { Card } from "@/design-system/components/Card";
-import { Screen } from "@/design-system/components/Screen";
-import { Text } from "@/design-system/components/Text";
+import { Button, Card, Screen, Text } from "@/design-system";
 import { lockSession } from "@/services/biometric/sessionService";
 import { requireBiometric } from "@/services/biometric/biometricService";
 

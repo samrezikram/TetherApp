@@ -4,9 +4,7 @@ import { CameraView, useCameraPermissions } from "expo-camera";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "@/app/navigation/types";
-import { Button } from "@/design-system/components/Button";
-import { Screen } from "@/design-system/components/Screen";
-import { Text } from "@/design-system/components/Text";
+import { Button, Screen, Text } from "@/design-system";
 import { parseQrPayload } from "@/services/qr/qrParser";
 
 export function ScannerScreen() {

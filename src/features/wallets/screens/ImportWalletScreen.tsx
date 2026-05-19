@@ -2,10 +2,7 @@ import React, { useState } from "react";
 import { Alert } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { useWallet } from "@tetherto/wdk-react-native-provider";
-import { Button } from "@/design-system/components/Button";
-import { Input } from "@/design-system/components/Input";
-import { Screen } from "@/design-system/components/Screen";
-import { Text } from "@/design-system/components/Text";
+import { Button, Input, Screen, Text } from "@/design-system";
 import { logger } from "@/infrastructure/logging/logger";
 import { storeSecret } from "@/services/secure-storage/keychainStorage";
 import {

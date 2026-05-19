@@ -3,10 +3,7 @@ import Clipboard from "@react-native-clipboard/clipboard";
 import QRCode from "react-native-qrcode-svg";
 import { Alert, View } from "react-native";
 import { useWallet } from "@tetherto/wdk-react-native-provider";
-import { Button } from "@/design-system/components/Button";
-import { Card } from "@/design-system/components/Card";
-import { Screen } from "@/design-system/components/Screen";
-import { Text } from "@/design-system/components/Text";
+import { Button, Card, Screen, Text } from "@/design-system";
 
 export function ReceiveScreen() {
   const { addresses } = useWallet();

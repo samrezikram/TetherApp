@@ -2,7 +2,7 @@ import React, { useEffect } from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { WalletProvider } from "@tetherto/wdk-react-native-provider";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import { AppThemeProvider } from "@/design-system/theme/ThemeProvider";
+import { AppThemeProvider } from "@/design-system";
 import { wdkConfig } from "@/services/wdk/wdkConfig";
 import { bindAppStateSessionLock } from "@/services/biometric/sessionService";
 import { initializeCertificatePinning } from "@/infrastructure/api/certificatePinning";

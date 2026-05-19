@@ -4,11 +4,7 @@ import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useWallet } from "@tetherto/wdk-react-native-provider";
 import type { RootStackParamList } from "@/app/navigation/types";
-import { Card } from "@/design-system/components/Card";
-import { Screen } from "@/design-system/components/Screen";
-import { Text } from "@/design-system/components/Text";
-import { Button } from "@/design-system/components/Button";
-import { LoadingState } from "@/design-system/components/State";
+import { Button, Card, LoadingState, Screen, Text } from "@/design-system";
 
 export function TransactionHistoryScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();

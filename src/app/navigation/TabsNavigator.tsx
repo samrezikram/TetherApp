@@ -5,7 +5,7 @@ import type { AppTabParamList } from "@/app/navigation/types";
 import { WalletHomeScreen } from "@/features/wallets/screens/WalletHomeScreen";
 import { TransactionHistoryScreen } from "@/features/transactions/screens/TransactionHistoryScreen";
 import { SettingsScreen } from "@/features/settings/screens/SettingsScreen";
-import { useTheme } from "@/design-system/theme/ThemeProvider";
+import { useTheme } from "@/design-system";
 
 const Tab = createBottomTabNavigator<AppTabParamList>();
 

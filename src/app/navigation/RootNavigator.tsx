@@ -8,7 +8,7 @@ import { RecoveryPhraseScreen } from "@/features/wallets/screens/RecoveryPhraseS
 import { ScannerScreen } from "@/features/scanner/screens/ScannerScreen";
 import { SendScreen } from "@/features/send/screens/SendScreen";
 import { TransactionDetailsScreen } from "@/features/transactions/screens/TransactionDetailsScreen";
-import { useTheme } from "@/design-system/theme/ThemeProvider";
+import { useTheme } from "@/design-system";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 

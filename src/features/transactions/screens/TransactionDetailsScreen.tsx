@@ -1,7 +1,6 @@
 import React from "react";
 import { useRoute } from "@react-navigation/native";
-import { Screen } from "@/design-system/components/Screen";
-import { Text } from "@/design-system/components/Text";
+import { Screen, Text } from "@/design-system";
 
 export function TransactionDetailsScreen() {
   const route = useRoute();

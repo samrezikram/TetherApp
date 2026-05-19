@@ -1,19 +1,18 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { Alert, View } from "react-native";
-import { useNavigation } from "@react-navigation/native";
-import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { useWallet } from "@tetherto/wdk-react-native-provider";
 import type { RootStackParamList } from "@/app/navigation/types";
-import { Button } from "@/design-system/components/Button";
-import { Card } from "@/design-system/components/Card";
-import { Screen } from "@/design-system/components/Screen";
-import { Text } from "@/design-system/components/Text";
-import { Input } from "@/design-system/components/Input";
+import { Button, Card, Input, Screen, Text } from "@/design-system";
+import type { WalletSummary } from "@/domain/wallet/types";
 import { useSecureSession } from "@/hooks/useSecureSession";
 import { logger } from "@/infrastructure/logging/logger";
-import type { WalletSummary } from "@/domain/wallet/types";
-import { deleteSecret, getSecret, storeSecret } from "@/services/secure-storage/keychainStorage";
 import { requireBiometric } from "@/services/biometric/biometricService";
+import {
+  deleteSecret,
+  getSecret,
+  storeSecret,
+} from "@/services/secure-storage/keychainStorage";
+import {
+  generateSeedPhrase,
+  type SeedPhraseLength,
+} from "@/services/wallets/seedPhrase";
 import {
   createWalletId,
   deleteRegisteredWallet,
@@ -22,10 +21,15 @@ import {
   setActiveWalletId,
   upsertRegisteredWallet,
 } from "@/services/wallets/walletRegistry";
-import { generateSeedPhrase, type SeedPhraseLength } from "@/services/wallets/seedPhrase";
+import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { useWallet } from "@tetherto/wdk-react-native-provider";
+import React, { useEffect, useMemo, useState } from "react";
+import { Alert, View } from "react-native";
 
 export function WalletHomeScreen() {
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const {
     balances,
     clearWallet,
@@ -37,15 +41,15 @@ export function WalletHomeScreen() {
   } = useWallet();
   const secureSession = useSecureSession();
   const [walletName, setWalletName] = useState("Main Wallet");
-  const [seedPhraseLength, setSeedPhraseLength] = useState<SeedPhraseLength>(12);
+  const [seedPhraseLength, setSeedPhraseLength] =
+    useState<SeedPhraseLength>(12);
   const [wallets, setWallets] = useState<WalletSummary[]>([]);
-  const [activeWalletId, setActiveWalletIdState] = useState<string | null>(null);
+  const [activeWalletId, setActiveWalletIdState] = useState<string | null>(
+    null,
+  );
   const [isBusy, setIsBusy] = useState(false);
 
-  const balanceRows = useMemo(
-    () => balances?.list ?? [],
-    [balances?.list],
-  );
+  const balanceRows = useMemo(() => balances?.list ?? [], [balances?.list]);
 
   useEffect(() => {
     void refreshRegisteredWallets();
@@ -93,7 +97,10 @@ export function WalletHomeScreen() {
       navigation.navigate("RecoveryPhrase", { walletId });
     } catch (error) {
       logger.error("Create wallet failed", error);
-      Alert.alert("Wallet creation failed", "Check WDK configuration and try again.");
+      Alert.alert(
+        "Wallet creation failed",
+        "Check WDK configuration and try again.",
+      );
     } finally {
       setIsBusy(false);
     }
@@ -103,7 +110,9 @@ export function WalletHomeScreen() {
     setIsBusy(true);
     try {
       await requireBiometric("unlock");
-      const selectedWallet = wallets.find((candidate) => candidate.id === walletId);
+      const selectedWallet = wallets.find(
+        (candidate) => candidate.id === walletId,
+      );
       const mnemonic = await getSecret(`wallet:${walletId}:mnemonic`, {
         requireBiometry: true,
       });
@@ -119,39 +128,46 @@ export function WalletHomeScreen() {
       await refreshRegisteredWallets();
     } catch (error) {
       logger.error("Switch wallet failed", error);
-      Alert.alert("Switch failed", "Unable to unlock and switch to that wallet.");
+      Alert.alert(
+        "Switch failed",
+        "Unable to unlock and switch to that wallet.",
+      );
     } finally {
       setIsBusy(false);
     }
   }
 
   async function handleDeleteWallet(walletId: string) {
-    Alert.alert("Delete wallet", "This removes the local encrypted wallet copy from this device.", [
-      { style: "cancel", text: "Cancel" },
-      {
-        style: "destructive",
-        text: "Delete",
-        onPress: () => {
-          void (async () => {
-            setIsBusy(true);
-            try {
-              await requireBiometric("settings");
-              await deleteSecret(`wallet:${walletId}:mnemonic`);
-              await deleteRegisteredWallet(walletId);
-              if (walletId === activeWalletId) {
-                await clearWallet();
+    Alert.alert(
+      "Delete wallet",
+      "This removes the local encrypted wallet copy from this device.",
+      [
+        { style: "cancel", text: "Cancel" },
+        {
+          style: "destructive",
+          text: "Delete",
+          onPress: () => {
+            void (async () => {
+              setIsBusy(true);
+              try {
+                await requireBiometric("settings");
+                await deleteSecret(`wallet:${walletId}:mnemonic`);
+                await deleteRegisteredWallet(walletId);
+                if (walletId === activeWalletId) {
+                  await clearWallet();
+                }
+                await refreshRegisteredWallets();
+              } catch (error) {
+                logger.error("Delete wallet failed", error);
+                Alert.alert("Delete failed", "Unable to delete this wallet.");
+              } finally {
+                setIsBusy(false);
               }
-              await refreshRegisteredWallets();
-            } catch (error) {
-              logger.error("Delete wallet failed", error);
-              Alert.alert("Delete failed", "Unable to delete this wallet.");
-            } finally {
-              setIsBusy(false);
-            }
-          })();
+            })();
+          },
         },
-      },
-    ]);
+      ],
+    );
   }
 
   if (!isInitialized) {
@@ -222,7 +238,9 @@ export function WalletHomeScreen() {
           Portfolio
         </Text>
         <Text variant="displaySmall">
-          {balanceRows.length === 0 ? "No balances" : `${balanceRows.length} assets`}
+          {balanceRows.length === 0
+            ? "No balances"
+            : `${balanceRows.length} assets`}
         </Text>
       </Card>
       <View style={{ flexDirection: "row", gap: 12 }}>
@@ -271,12 +289,14 @@ export function WalletHomeScreen() {
           </View>
         </Card>
       ))}
-      {balanceRows.map((balance: { denomination?: string; value?: string }, index: number) => (
-        <Card key={`${balance.denomination ?? "asset"}-${index}`}>
-          <Text variant="titleSmall">{balance.denomination ?? "Asset"}</Text>
-          <Text color="textMuted">{balance.value ?? "0"}</Text>
-        </Card>
-      ))}
+      {balanceRows.map(
+        (balance: { denomination?: string; value?: string }, index: number) => (
+          <Card key={`${balance.denomination ?? "asset"}-${index}`}>
+            <Text variant="titleSmall">{balance.denomination ?? "Asset"}</Text>
+            <Text color="textMuted">{balance.value ?? "0"}</Text>
+          </Card>
+        ),
+      )}
     </Screen>
   );
 }
