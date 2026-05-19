@@ -1,5 +1,7 @@
 import * as Keychain from "react-native-keychain";
 import type { SecureSecretKey } from "@/domain/security/types";
+import { env } from "@/infrastructure/env/env";
+import { logger } from "@/infrastructure/logging/logger";
 
 const servicePrefix = "com.tetherapp.wdkwallet";
 
@@ -13,20 +15,57 @@ function accessControl(requireBiometry: boolean) {
     : Keychain.ACCESS_CONTROL.DEVICE_PASSCODE;
 }
 
-export async function storeSecret(
+function shouldAllowSoftwareBackedStorage(error: unknown) {
+  if (env.appEnv === "production") {
+    return false;
+  }
+
+  const message = error instanceof Error ? error.message : String(error);
+  return /required security guarantees|secure hardware|crypto/i.test(message);
+}
+
+function storageOptions(
   key: SecureSecretKey,
-  value: string,
-  options: SecretOptions = {},
-): Promise<void> {
-  await Keychain.setGenericPassword(key, value, {
+  options: SecretOptions,
+  securityLevel: Keychain.SECURITY_LEVEL,
+) {
+  return {
     accessible: Keychain.ACCESSIBLE.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
     accessControl: accessControl(options.requireBiometry ?? true),
     authenticationPrompt: {
       title: "Authenticate to save wallet data",
     },
-    securityLevel: Keychain.SECURITY_LEVEL.SECURE_HARDWARE,
+    securityLevel,
     service: `${servicePrefix}.${key}`,
-  });
+  };
+}
+
+export async function storeSecret(
+  key: SecureSecretKey,
+  value: string,
+  options: SecretOptions = {},
+): Promise<void> {
+  try {
+    await Keychain.setGenericPassword(
+      key,
+      value,
+      storageOptions(key, options, Keychain.SECURITY_LEVEL.SECURE_HARDWARE),
+    );
+  } catch (error) {
+    if (!shouldAllowSoftwareBackedStorage(error)) {
+      throw error;
+    }
+
+    logger.warn(
+      "Secure hardware keychain unavailable; using software-backed storage for development",
+      error,
+    );
+    await Keychain.setGenericPassword(
+      key,
+      value,
+      storageOptions(key, options, Keychain.SECURITY_LEVEL.SECURE_SOFTWARE),
+    );
+  }
 }
 
 export async function getSecret(

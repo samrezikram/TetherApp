@@ -8,6 +8,18 @@ const secretPatterns: RegExp[] = [
   /\b0x[a-fA-F0-9]{64}\b/g,
 ];
 
+export function redactedAddress(address: string | null | undefined): string {
+  if (!address) {
+    return "";
+  }
+
+  if (address.length <= 12) {
+    return "[REDACTED_ADDRESS]";
+  }
+
+  return `${address.slice(0, 6)}...${address.slice(-4)}`;
+}
+
 export function redactSecrets(input: unknown): string {
   const text =
     typeof input === "string"
