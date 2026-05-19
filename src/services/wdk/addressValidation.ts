@@ -6,6 +6,28 @@ const bitcoinAddress =
 const tronAddress = /^T[1-9A-HJ-NP-Za-km-z]{33}$/;
 const tonAddress = /^(EQ|UQ)[a-zA-Z0-9_-]{46}$/;
 
+export function inferNetworkFromAddress(address: string): NetworkTypeId | null {
+  const trimmed = address.trim();
+
+  if (evmAddress.test(trimmed)) {
+    return "ethereum";
+  }
+
+  if (bitcoinAddress.test(trimmed)) {
+    return "bitcoin";
+  }
+
+  if (tronAddress.test(trimmed)) {
+    return "tron";
+  }
+
+  if (tonAddress.test(trimmed)) {
+    return "ton";
+  }
+
+  return null;
+}
+
 export function isValidAddress(
   network: NetworkTypeId,
   address: string,

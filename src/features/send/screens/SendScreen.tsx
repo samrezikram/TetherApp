@@ -11,6 +11,7 @@ import { estimateSendFee } from "@/services/fees/feeService";
 import { sendTransaction } from "@/services/wdk/wdkService";
 import { logger } from "@/infrastructure/logging/logger";
 import { validateSendDraft } from "@/features/send/sendValidation";
+import { inferNetworkFromAddress } from "@/services/wdk/addressValidation";
 
 type RouteParams = {
   asset?: AssetTickerId;
@@ -24,6 +25,20 @@ type SendStep = "recipient" | "amount" | "review" | "result";
 
 function getDefaultAsset(network: NetworkTypeId): AssetTickerId {
   return network === "bitcoin" ? "BTC" : "USDT";
+}
+
+function inferNetworkFromWalletAddresses(
+  address: string,
+  addresses: Partial<Record<NetworkTypeId, string>> | undefined,
+) {
+  const normalizedAddress = address.trim().toLowerCase();
+  const match = Object.entries(addresses ?? {}).find(
+    ([, walletAddress]) =>
+      typeof walletAddress === "string" &&
+      walletAddress.trim().toLowerCase() === normalizedAddress,
+  );
+
+  return match?.[0] as NetworkTypeId | undefined;
 }
 
 function formatFee(value: unknown, asset: AssetTickerId) {
@@ -41,6 +56,27 @@ function formatFee(value: unknown, asset: AssetTickerId) {
   }
 
   return JSON.stringify(value);
+}
+
+type BalanceRow = {
+  denomination?: string;
+  networkType?: string;
+  value?: string;
+};
+
+function findAvailableBalance(
+  rows: BalanceRow[] | undefined,
+  network: NetworkTypeId,
+  asset: AssetTickerId,
+) {
+  const balance = rows?.find(
+    (row) =>
+      row.denomination?.toUpperCase() === asset &&
+      row.networkType === network,
+  );
+  const numericValue = Number(balance?.value ?? "0");
+
+  return Number.isFinite(numericValue) ? numericValue : 0;
 }
 
 function getErrorMessage(error: unknown) {
@@ -65,7 +101,8 @@ export function SendScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route = useRoute();
   const params = (route.params ?? {}) as RouteParams;
-  const { addresses, isUnlocked, wallet } = useWallet();
+  const { addresses, balances, isUnlocked, wallet } = useWallet();
+  const walletAddresses = addresses as Partial<Record<NetworkTypeId, string>> | undefined;
   const initialNetwork = params.network ?? "ethereum";
   const [recipient, setRecipient] = useState(params.recipient ?? "");
   const [amount, setAmount] = useState(params.amount ?? "");
@@ -88,7 +125,11 @@ export function SendScreen() {
   };
 
   useEffect(() => {
-    const nextNetwork = params.network ?? network;
+    const inferredNetwork = params.recipient
+      ? inferNetworkFromWalletAddresses(params.recipient, walletAddresses) ??
+        inferNetworkFromAddress(params.recipient)
+      : null;
+    const nextNetwork = params.network ?? inferredNetwork ?? network;
 
     if (params.recipient !== undefined) {
       setRecipient(params.recipient);
@@ -99,11 +140,11 @@ export function SendScreen() {
       setAmount(params.amount);
     }
 
-    if (params.network !== undefined) {
-      setNetwork(params.network);
+    if (params.network !== undefined || inferredNetwork) {
+      setNetwork(nextNetwork);
     }
 
-    if (params.asset !== undefined || params.network !== undefined) {
+    if (params.asset !== undefined || params.network !== undefined || inferredNetwork) {
       setAsset(params.asset ?? getDefaultAsset(nextNetwork));
     }
 
@@ -112,7 +153,15 @@ export function SendScreen() {
       setFeeError(null);
     }
     // params.scannedAt intentionally makes repeated scans of the same address update the form.
-  }, [params.amount, params.asset, params.network, params.recipient, params.scannedAt]);
+  }, [
+    params.amount,
+    params.asset,
+    params.network,
+    params.recipient,
+    params.scannedAt,
+    walletAddresses,
+    network,
+  ]);
 
   const validation = useMemo(
     () => validateSendDraft(draft),
@@ -121,9 +170,12 @@ export function SendScreen() {
   const recipientError =
     recipient.length > 0 ? validation.errors.recipient : undefined;
   const amountError = amount.length > 0 ? validation.errors.amount : undefined;
-  const senderAddress = (addresses as Partial<Record<NetworkTypeId, string>> | undefined)?.[
-    network
-  ];
+  const senderAddress = walletAddresses?.[network];
+  const availableBalance = findAvailableBalance(
+    balances?.list as BalanceRow[] | undefined,
+    network,
+    asset,
+  );
   const canRequestFee = recipient.trim().length > 0 && amount.trim().length > 0;
 
   function setRecipientValue(value: string) {
@@ -158,6 +210,20 @@ export function SendScreen() {
 
     if (!senderAddress) {
       setFeeError(`No ${network} address is resolved for this wallet yet.`);
+      return;
+    }
+
+    if (availableBalance <= 0) {
+      setFeeError(
+        `This wallet has no ${asset} balance on ${network}. Receive funds first, then refresh balances before estimating fees.`,
+      );
+      return;
+    }
+
+    if (Number(amount) > availableBalance) {
+      setFeeError(
+        `Amount exceeds available ${asset} balance on ${network}. Available: ${availableBalance}.`,
+      );
       return;
     }
 
@@ -227,6 +293,9 @@ export function SendScreen() {
             </Text>
             <Text color="textMuted" variant="bodySmall">
               {asset} on {network}
+            </Text>
+            <Text color="textMuted" variant="bodySmall">
+              Available: {availableBalance} {asset}
             </Text>
           </Card>
           <Input

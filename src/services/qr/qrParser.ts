@@ -1,4 +1,5 @@
 import type { AssetTickerId, NetworkTypeId } from "@/domain/wallet/types";
+import { inferNetworkFromAddress } from "@/services/wdk/addressValidation";
 
 export type ParsedQrPayload = {
   address: string;
@@ -24,7 +25,14 @@ export function parseQrPayload(payload: string): ParsedQrPayload {
   const trimmed = payload.trim();
 
   if (!trimmed.includes(":")) {
-    return { address: trimmed };
+    const network = inferNetworkFromAddress(trimmed);
+    const asset = network === "bitcoin" ? "BTC" : undefined;
+
+    return {
+      address: trimmed,
+      ...(asset ? { asset } : {}),
+      ...(network ? { network } : {}),
+    };
   }
 
   const [scheme, rest] = trimmed.split(":");
@@ -38,11 +46,11 @@ export function parseQrPayload(payload: string): ParsedQrPayload {
   }
 
   const params = new URLSearchParams(query);
+  const parsedAddress = normalizeAddress(address);
   const normalizedScheme = scheme.toLowerCase();
-  const network = networkByScheme[normalizedScheme];
+  const network = networkByScheme[normalizedScheme] ?? inferNetworkFromAddress(parsedAddress);
   const amount = params.get("amount") ?? undefined;
   const asset = network === "bitcoin" ? "BTC" : undefined;
-  const parsedAddress = normalizeAddress(address);
 
   return {
     address: parsedAddress,
