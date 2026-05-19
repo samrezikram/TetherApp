@@ -6,25 +6,30 @@ type TransactionHistoryParams = {
   address: string;
   network: NetworkTypeId;
   cursor?: string;
+  token?: string;
 };
 
 export async function fetchTransactionHistory({
   address,
   cursor,
   network,
+  token,
 }: TransactionHistoryParams): Promise<TransactionRecord[]> {
-  const url = new URL("/api/v1/transactions", env.indexerBaseUrl);
-  url.searchParams.set("address", address);
-  url.searchParams.set("chain", network);
+  const resolvedToken = token ?? (network === "bitcoin" ? "btc" : "usdt");
+  const url = new URL(
+    `/api/v1/${network}/${resolvedToken}/${address}/token-transfers`,
+    env.indexerBaseUrl,
+  );
+  url.searchParams.set("limit", "100");
 
   if (cursor) {
-    url.searchParams.set("cursor", cursor);
+    url.searchParams.set("fromTs", cursor);
   }
 
   const response = await fetch(url.toString(), {
     headers: {
-      Authorization: env.indexerApiKey ? `Bearer ${env.indexerApiKey}` : "",
       "Content-Type": "application/json",
+      "x-api-key": env.indexerApiKey ?? "",
     },
   });
 
@@ -32,6 +37,6 @@ export async function fetchTransactionHistory({
     throw new Error(`Indexer request failed with ${response.status}`);
   }
 
-  const payload = (await response.json()) as { data?: TransactionRecord[] };
-  return payload.data ?? [];
+  const payload = (await response.json()) as { transfers?: TransactionRecord[] };
+  return payload.transfers ?? [];
 }

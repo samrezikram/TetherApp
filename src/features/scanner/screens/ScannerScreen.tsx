@@ -1,14 +1,15 @@
-import React, { useEffect, useState } from "react";
-import { Alert, StyleSheet, View } from "react-native";
-import { CameraView, useCameraPermissions } from "expo-camera";
-import { useNavigation } from "@react-navigation/native";
-import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import type { RootStackParamList } from "@/app/navigation/types";
 import { Button, Screen, Text } from "@/design-system";
 import { parseQrPayload } from "@/services/qr/qrParser";
+import { useNavigation } from "@react-navigation/native";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { CameraView, useCameraPermissions } from "expo-camera";
+import React, { useEffect, useState } from "react";
+import { StyleSheet, View } from "react-native";
 
 export function ScannerScreen() {
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
 
@@ -38,8 +39,18 @@ export function ScannerScreen() {
 
           setScanned(true);
           const parsed = parseQrPayload(data);
-          Alert.alert("Scanned", parsed.address);
-          navigation.navigate("Send", parsed);
+          const sendParams = {
+            recipient: parsed.address,
+            scannedAt: Date.now(),
+            ...(parsed.asset ? { asset: parsed.asset } : {}),
+            ...(parsed.amount ? { amount: parsed.amount } : {}),
+            ...(parsed.network ? { network: parsed.network } : {}),
+          };
+          navigation.navigate({
+            merge: true,
+            name: "Send",
+            params: sendParams,
+          });
         }}
         style={StyleSheet.absoluteFill}
       />

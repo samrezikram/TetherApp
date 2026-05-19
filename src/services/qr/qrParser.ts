@@ -1,7 +1,24 @@
+import type { AssetTickerId, NetworkTypeId } from "@/domain/wallet/types";
+
 export type ParsedQrPayload = {
   address: string;
+  asset?: AssetTickerId;
   amount?: string;
+  network?: NetworkTypeId;
 };
+
+const networkByScheme: Partial<Record<string, NetworkTypeId>> = {
+  arbitrum: "arbitrum",
+  bitcoin: "bitcoin",
+  ethereum: "ethereum",
+  polygon: "polygon",
+  ton: "ton",
+  tron: "tron",
+};
+
+function normalizeAddress(address: string) {
+  return address.replace(/^pay-/, "").split("@")[0] ?? address;
+}
 
 export function parseQrPayload(payload: string): ParsedQrPayload {
   const trimmed = payload.trim();
@@ -21,8 +38,16 @@ export function parseQrPayload(payload: string): ParsedQrPayload {
   }
 
   const params = new URLSearchParams(query);
+  const normalizedScheme = scheme.toLowerCase();
+  const network = networkByScheme[normalizedScheme];
+  const amount = params.get("amount") ?? undefined;
+  const asset = network === "bitcoin" ? "BTC" : undefined;
+  const parsedAddress = normalizeAddress(address);
 
-  const amount = params.get("amount");
-
-  return amount ? { address, amount } : { address };
+  return {
+    address: parsedAddress,
+    ...(asset ? { asset } : {}),
+    ...(amount ? { amount } : {}),
+    ...(network ? { network } : {}),
+  };
 }

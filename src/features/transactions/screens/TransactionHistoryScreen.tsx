@@ -8,8 +8,13 @@ import { Button, Card, LoadingState, Screen, Text } from "@/design-system";
 
 export function TransactionHistoryScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const { refreshTransactions, transactions } = useWallet();
+  const { addresses, refreshTransactions, transactions } = useWallet();
   const rows = transactions?.list ?? [];
+  const ownedAddresses = new Set(
+    Object.values(addresses ?? {})
+      .filter((address): address is string => typeof address === "string")
+      .map((address) => address.toLowerCase()),
+  );
   const grouped = rows.reduce<Record<string, typeof rows>>((groups, transaction) => {
     const key = transaction.timestamp
       ? new Date(transaction.timestamp).toLocaleDateString()
@@ -32,9 +37,20 @@ export function TransactionHistoryScreen() {
             </Text>
             {transactionsForDate.map((transaction, index) => (
               <Card key={transaction.transactionHash ?? index}>
-                <Text variant="titleSmall">{transaction.amount ?? "Transaction"}</Text>
+                <Text variant="titleSmall">
+                  {ownedAddresses.has(transaction.to?.toLowerCase())
+                    ? "Incoming"
+                    : "Outgoing"}{" "}
+                  {transaction.amount ?? "Transaction"}
+                </Text>
                 <Text color="textMuted" variant="bodySmall">
                   {transaction.token} on {transaction.blockchain}
+                </Text>
+                <Text color="textMuted" selectable variant="bodySmall">
+                  From: {transaction.from}
+                </Text>
+                <Text color="textMuted" selectable variant="bodySmall">
+                  To: {transaction.to}
                 </Text>
                 <Text color="textMuted" selectable variant="bodySmall">
                   {transaction.transactionHash}

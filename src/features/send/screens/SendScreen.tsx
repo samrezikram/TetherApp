@@ -1,29 +1,80 @@
-import React, { useMemo, useState } from "react";
-import { Alert, View } from "react-native";
+import React, { useEffect, useMemo, useState } from "react";
+import { Alert as NativeAlert, View } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { useWallet } from "@tetherto/wdk-react-native-provider";
 import type { RootStackParamList } from "@/app/navigation/types";
-import { Button, Card, Input, Screen, Text } from "@/design-system";
+import { Alert, Button, Card, Input, Screen, Text } from "@/design-system";
 import type { SendDraft } from "@/domain/transaction/types";
+import type { AssetTickerId, NetworkTypeId } from "@/domain/wallet/types";
 import { estimateSendFee } from "@/services/fees/feeService";
 import { sendTransaction } from "@/services/wdk/wdkService";
 import { logger } from "@/infrastructure/logging/logger";
 import { validateSendDraft } from "@/features/send/sendValidation";
 
 type RouteParams = {
+  asset?: AssetTickerId;
   amount?: string;
+  network?: NetworkTypeId;
   recipient?: string;
+  scannedAt?: number;
 };
 
 type SendStep = "recipient" | "amount" | "review" | "result";
+
+function getDefaultAsset(network: NetworkTypeId): AssetTickerId {
+  return network === "bitcoin" ? "BTC" : "USDT";
+}
+
+function formatFee(value: unknown, asset: AssetTickerId) {
+  if (typeof value === "number") {
+    return `${value.toFixed(8).replace(/\.?0+$/, "")} ${asset}`;
+  }
+
+  if (
+    value &&
+    typeof value === "object" &&
+    "fee" in value &&
+    typeof value.fee === "string"
+  ) {
+    return `${value.fee} ${asset}`;
+  }
+
+  return JSON.stringify(value);
+}
+
+function getErrorMessage(error: unknown) {
+  const message = error instanceof Error ? error.message : String(error);
+
+  if (message.includes("Insufficient balance")) {
+    return "This wallet does not have enough spendable balance to quote this transfer.";
+  }
+
+  if (message.includes("WDK Manager not initialized")) {
+    return "Wallet engine is still starting. Unlock the wallet and try again.";
+  }
+
+  if (message.includes("Invalid")) {
+    return message;
+  }
+
+  return "Check recipient, amount, network, and wallet balance.";
+}
 
 export function SendScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route = useRoute();
   const params = (route.params ?? {}) as RouteParams;
+  const { addresses, isUnlocked, wallet } = useWallet();
+  const initialNetwork = params.network ?? "ethereum";
   const [recipient, setRecipient] = useState(params.recipient ?? "");
   const [amount, setAmount] = useState(params.amount ?? "");
+  const [network, setNetwork] = useState<NetworkTypeId>(initialNetwork);
+  const [asset, setAsset] = useState<AssetTickerId>(
+    params.asset ?? getDefaultAsset(initialNetwork),
+  );
   const [fee, setFee] = useState<string | null>(null);
+  const [feeError, setFeeError] = useState<string | null>(null);
   const [isBusy, setIsBusy] = useState(false);
   const [step, setStep] = useState<SendStep>(params.recipient ? "amount" : "recipient");
   const [result, setResult] = useState<string | null>(null);
@@ -31,25 +82,73 @@ export function SendScreen() {
   const draft: SendDraft = {
     accountIndex: 0,
     amount,
-    asset: "USDT",
-    network: "ethereum",
+    asset,
+    network,
     recipient,
   };
 
-  const validation = useMemo(() => validateSendDraft(draft), [amount, recipient]);
+  useEffect(() => {
+    const nextNetwork = params.network ?? network;
+
+    if (params.recipient !== undefined) {
+      setRecipient(params.recipient);
+      setStep("amount");
+    }
+
+    if (params.amount !== undefined) {
+      setAmount(params.amount);
+    }
+
+    if (params.network !== undefined) {
+      setNetwork(params.network);
+    }
+
+    if (params.asset !== undefined || params.network !== undefined) {
+      setAsset(params.asset ?? getDefaultAsset(nextNetwork));
+    }
+
+    if (params.recipient !== undefined || params.amount !== undefined) {
+      setFee(null);
+      setFeeError(null);
+    }
+    // params.scannedAt intentionally makes repeated scans of the same address update the form.
+  }, [params.amount, params.asset, params.network, params.recipient, params.scannedAt]);
+
+  const validation = useMemo(
+    () => validateSendDraft(draft),
+    [amount, asset, network, recipient],
+  );
   const recipientError =
     recipient.length > 0 ? validation.errors.recipient : undefined;
   const amountError = amount.length > 0 ? validation.errors.amount : undefined;
+  const senderAddress = (addresses as Partial<Record<NetworkTypeId, string>> | undefined)?.[
+    network
+  ];
 
   async function quote() {
+    setFee(null);
+    setFeeError(null);
+
+    if (!wallet || !isUnlocked) {
+      setFeeError("Unlock a wallet before estimating fees.");
+      return;
+    }
+
+    if (!senderAddress) {
+      setFeeError(`No ${network} address is resolved for this wallet yet.`);
+      return;
+    }
+
     setIsBusy(true);
     try {
       const quoteResult = await estimateSendFee(draft);
-      setFee(typeof quoteResult === "number" ? `${quoteResult} ${draft.asset}` : JSON.stringify(quoteResult));
+      setFee(formatFee(quoteResult, draft.asset));
       setStep("review");
     } catch (error) {
+      const message = getErrorMessage(error);
+      setFeeError(message);
       logger.warn("Fee estimate failed", error);
-      Alert.alert("Fee estimate failed", "Check recipient, amount, and network.");
+      NativeAlert.alert("Fee estimate failed", message);
     } finally {
       setIsBusy(false);
     }
@@ -63,7 +162,7 @@ export function SendScreen() {
       setStep("result");
     } catch (error) {
       logger.error("Send transaction failed", error);
-      Alert.alert("Transaction failed", "Authentication, validation, or broadcast failed.");
+      NativeAlert.alert("Transaction failed", getErrorMessage(error));
     } finally {
       setIsBusy(false);
     }
@@ -104,6 +203,9 @@ export function SendScreen() {
             <Text selectable variant="bodySmall">
               {recipient}
             </Text>
+            <Text color="textMuted" variant="bodySmall">
+              {asset} on {network}
+            </Text>
           </Card>
           <Input
             error={amountError}
@@ -122,6 +224,13 @@ export function SendScreen() {
               variant="outline"
             />
           </View>
+          {feeError ? (
+            <Alert
+              message={feeError}
+              title="Fee estimate unavailable"
+              variant="warning"
+            />
+          ) : null}
         </>
       ) : null}
       {step === "review" ? (

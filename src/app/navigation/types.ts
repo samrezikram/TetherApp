@@ -1,4 +1,5 @@
 import type { NavigatorScreenParams } from "@react-navigation/native";
+import type { AssetTickerId, NetworkTypeId } from "@/domain/wallet/types";
 
 export type AppTabParamList = {
   Activity: undefined;
@@ -14,8 +15,11 @@ export type RootStackParamList = {
   Scanner: { mode: "address" | "payment-uri" };
   Send:
     | {
+        asset?: AssetTickerId;
         amount?: string;
+        network?: NetworkTypeId;
         recipient?: string;
+        scannedAt?: number;
       }
     | undefined;
   TransactionDetails: { transactionId: string; hash?: string };
