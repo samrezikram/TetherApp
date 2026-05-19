@@ -5,7 +5,13 @@
     "scheme": "wdkwallet",
     "version": "0.1.0",
     "orientation": "portrait",
+    "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./assets/splash.png",
+      "backgroundColor": "#052623",
+      "resizeMode": "contain"
+    },
     "ios": {
       "supportsTablet": false,
       "deploymentTarget": "15.1",
@@ -16,6 +22,10 @@
       }
     },
     "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#052623"
+      },
       "package": "com.tetherapp.wdkwallet",
       "permissions": [
         "CAMERA",

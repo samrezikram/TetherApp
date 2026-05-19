@@ -24,13 +24,19 @@ export function ImportWalletScreen() {
   const [isBusy, setIsBusy] = useState(false);
 
   const normalizedSeedPhrase = normalizeSeedPhrase(seedPhrase);
+  const trimmedName = name.trim();
   const wordCount = getSeedPhraseWordCount(seedPhrase);
+  const canImport = Boolean(trimmedName) && validateSeedPhrase(seedPhrase) && !isBusy;
   const seedPhraseError =
     seedPhrase.length > 0 && !validateSeedPhrase(seedPhrase)
       ? "Enter a valid 12 or 24 word recovery phrase."
       : undefined;
 
   async function importWallet() {
+    if (!trimmedName || isBusy) {
+      return;
+    }
+
     if (!validateSeedPhrase(seedPhrase)) {
       Alert.alert("Invalid recovery phrase", "Check the words and order.");
       return;
@@ -40,7 +46,7 @@ export function ImportWalletScreen() {
     try {
       const walletId = createWalletId();
       await clearWdkRuntimeCaches();
-      await createWallet({ mnemonic: normalizedSeedPhrase, name });
+      await createWallet({ mnemonic: normalizedSeedPhrase, name: trimmedName });
       await storeSecret(`wallet:${walletId}:mnemonic`, normalizedSeedPhrase, {
         requireBiometry: true,
       });
@@ -49,7 +55,7 @@ export function ImportWalletScreen() {
         createdAt: new Date().toISOString(),
         id: walletId,
         imported: true,
-        name,
+        name: trimmedName,
       });
       await refreshWalletBalance();
       navigation.goBack();
@@ -68,10 +74,16 @@ export function ImportWalletScreen() {
         Recovery phrases are normalized locally and stored through biometric
         Keychain protection.
       </Text>
-      <Input label="Wallet name" onChangeText={setName} value={name} />
+      <Input
+        editable={!isBusy}
+        label="Wallet name"
+        onChangeText={setName}
+        value={name}
+      />
       <Input
         autoCapitalize="none"
         autoCorrect={false}
+        editable={!isBusy}
         error={seedPhraseError}
         label={`Recovery phrase (${wordCount} words)`}
         multiline
@@ -80,7 +92,7 @@ export function ImportWalletScreen() {
         value={seedPhrase}
       />
       <Button
-        disabled={!validateSeedPhrase(seedPhrase)}
+        disabled={!canImport}
         isLoading={isBusy}
         onPress={importWallet}
         title="Import Wallet"

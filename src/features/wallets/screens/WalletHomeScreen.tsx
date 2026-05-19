@@ -1,9 +1,11 @@
 import type { RootStackParamList } from "@/app/navigation/types";
 import { Button, Card, Input, Screen, Text } from "@/design-system";
 import type { WalletSummary } from "@/domain/wallet/types";
+import { WalletRuntimeSplash } from "@/features/wallets/components/WalletRuntimeSplash";
 import { useSecureSession } from "@/hooks/useSecureSession";
 import { logger } from "@/infrastructure/logging/logger";
 import { requireBiometric } from "@/services/biometric/biometricService";
+import { lockSession } from "@/services/biometric/sessionService";
 import {
   deleteSecret,
   getSecret,
@@ -42,6 +44,7 @@ export function WalletHomeScreen() {
   } = useWallet();
   const secureSession = useSecureSession();
   const [walletName, setWalletName] = useState("Main Wallet");
+  const [isCreatingWallet, setIsCreatingWallet] = useState(false);
   const [seedPhraseLength, setSeedPhraseLength] =
     useState<SeedPhraseLength>(12);
   const [wallets, setWallets] = useState<WalletSummary[]>([]);
@@ -51,6 +54,7 @@ export function WalletHomeScreen() {
   const [isBusy, setIsBusy] = useState(false);
 
   const balanceRows = useMemo(() => balances?.list ?? [], [balances?.list]);
+  const trimmedWalletName = walletName.trim();
 
   useEffect(() => {
     void refreshRegisteredWallets();
@@ -79,12 +83,16 @@ export function WalletHomeScreen() {
   }
 
   async function handleCreateWallet() {
+    if (!trimmedWalletName || isBusy) {
+      return;
+    }
+
     setIsBusy(true);
     try {
       const walletId = createWalletId();
       const mnemonic = generateSeedPhrase(seedPhraseLength);
       await clearWdkRuntimeCaches();
-      await createWallet({ mnemonic, name: walletName });
+      await createWallet({ mnemonic, name: trimmedWalletName });
       await storeSecret(`wallet:${walletId}:mnemonic`, mnemonic, {
         requireBiometry: true,
       });
@@ -93,10 +101,11 @@ export function WalletHomeScreen() {
         createdAt: new Date().toISOString(),
         id: walletId,
         imported: false,
-        name: walletName,
+        name: trimmedWalletName,
       });
       await refreshWalletBalance();
       await refreshRegisteredWallets();
+      setIsCreatingWallet(false);
       navigation.navigate("RecoveryPhrase", { walletId });
     } catch (error) {
       logger.error("Create wallet failed", error);
@@ -110,6 +119,10 @@ export function WalletHomeScreen() {
   }
 
   async function handleSwitchWallet(walletId: string) {
+    if (isBusy) {
+      return;
+    }
+
     setIsBusy(true);
     try {
       await requireBiometric("unlock");
@@ -142,9 +155,20 @@ export function WalletHomeScreen() {
   }
 
   async function handleDeleteWallet(walletId: string) {
+    if (isBusy) {
+      return;
+    }
+
+    const walletToDelete = wallets.find((candidate) => candidate.id === walletId);
+
+    if (!walletToDelete) {
+      Alert.alert("Delete failed", "Wallet record was not found.");
+      return;
+    }
+
     Alert.alert(
-      "Delete wallet",
-      "This removes the local encrypted wallet copy from this device.",
+      `Delete ${walletToDelete.name}?`,
+      "This removes the encrypted wallet copy from this device. Keep your recovery phrase before deleting.",
       [
         { style: "cancel", text: "Cancel" },
         {
@@ -156,9 +180,32 @@ export function WalletHomeScreen() {
               try {
                 await requireBiometric("settings");
                 await deleteSecret(`wallet:${walletId}:mnemonic`);
-                await deleteRegisteredWallet(walletId);
+                const remainingWallets = await deleteRegisteredWallet(walletId);
                 if (walletId === activeWalletId) {
                   await clearWallet();
+                  await clearWdkRuntimeCaches();
+                  const nextWallet = remainingWallets[0];
+
+                  if (nextWallet) {
+                    const mnemonic = await getSecret(
+                      `wallet:${nextWallet.id}:mnemonic`,
+                      {
+                        requireBiometry: true,
+                      },
+                    );
+
+                    if (mnemonic) {
+                      await createWallet({
+                        mnemonic,
+                        name: nextWallet.name,
+                      });
+                      await setActiveWalletId(nextWallet.id);
+                      await refreshWalletBalance();
+                    }
+                  } else {
+                    lockSession();
+                    setIsCreatingWallet(false);
+                  }
                 }
                 await refreshRegisteredWallets();
               } catch (error) {
@@ -175,48 +222,72 @@ export function WalletHomeScreen() {
   }
 
   if (!isInitialized) {
-    return (
-      <Screen>
-        <Text variant="headlineSmall">Initializing wallet runtime</Text>
-      </Screen>
-    );
+    return <WalletRuntimeSplash />;
   }
 
   if (!wallet) {
     return (
       <Screen>
-        <Text variant="headlineLarge">Create wallet</Text>
-        <Text color="textMuted">
-          A recovery phrase is generated locally, encrypted by WDK, and stored
-          behind biometric Keychain access for wallet switching.
-        </Text>
-        <Input
-          label="Wallet name"
-          onChangeText={setWalletName}
-          value={walletName}
-        />
-        <View style={{ flexDirection: "row", gap: 12 }}>
-          <Button
-            onPress={() => setSeedPhraseLength(12)}
-            title="12 words"
-            variant={seedPhraseLength === 12 ? "primary" : "outline"}
-          />
-          <Button
-            onPress={() => setSeedPhraseLength(24)}
-            title="24 words"
-            variant={seedPhraseLength === 24 ? "primary" : "outline"}
-          />
-        </View>
-        <Button
-          isLoading={isBusy}
-          onPress={handleCreateWallet}
-          title="Create Wallet"
-        />
-        <Button
-          onPress={() => navigation.navigate("ImportWallet")}
-          title="Import Wallet"
-          variant="outline"
-        />
+        {!isCreatingWallet ? (
+          <>
+            <Text variant="headlineLarge">Wallet setup</Text>
+            <Text color="textMuted">
+              Create a new self-custodial wallet or import an existing recovery
+              phrase. No wallet is created until you choose an action.
+            </Text>
+            <Button
+              disabled={isBusy}
+              onPress={() => setIsCreatingWallet(true)}
+              title="Create New Wallet"
+            />
+            <Button
+              disabled={isBusy}
+              onPress={() => navigation.navigate("ImportWallet")}
+              title="Import Wallet"
+              variant="outline"
+            />
+          </>
+        ) : (
+          <>
+            <Text variant="headlineLarge">Create wallet</Text>
+            <Text color="textMuted">
+              A recovery phrase is generated locally, encrypted by WDK, and
+              stored behind biometric Keychain access for wallet switching.
+            </Text>
+            <Input
+              editable={!isBusy}
+              label="Wallet name"
+              onChangeText={setWalletName}
+              value={walletName}
+            />
+            <View style={{ flexDirection: "row", gap: 12 }}>
+              <Button
+                disabled={isBusy}
+                onPress={() => setSeedPhraseLength(12)}
+                title="12 words"
+                variant={seedPhraseLength === 12 ? "primary" : "outline"}
+              />
+              <Button
+                disabled={isBusy}
+                onPress={() => setSeedPhraseLength(24)}
+                title="24 words"
+                variant={seedPhraseLength === 24 ? "primary" : "outline"}
+              />
+            </View>
+            <Button
+              disabled={!trimmedWalletName || isBusy}
+              isLoading={isBusy}
+              onPress={handleCreateWallet}
+              title="Create Wallet"
+            />
+            <Button
+              disabled={isBusy}
+              onPress={() => setIsCreatingWallet(false)}
+              title="Cancel"
+              variant="ghost"
+            />
+          </>
+        )}
       </Screen>
     );
   }
