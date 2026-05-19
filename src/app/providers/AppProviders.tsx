@@ -7,6 +7,9 @@ import { wdkConfig } from "@/services/wdk/wdkConfig";
 import { bindAppStateSessionLock } from "@/services/biometric/sessionService";
 import { initializeCertificatePinning } from "@/infrastructure/api/certificatePinning";
 import { logger } from "@/infrastructure/logging/logger";
+import { installWdkIndexerGuard } from "@/services/wdk/wdkIndexerGuard";
+
+installWdkIndexerGuard();
 
 export function AppProviders({ children }: { children: React.ReactNode }) {
   useEffect(() => bindAppStateSessionLock(), []);
