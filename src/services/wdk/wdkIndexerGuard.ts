@@ -11,6 +11,7 @@ import {
   filterConfiguredIndexerAddresses,
   getSupportedIndexerNetworks,
   getUnsupportedIndexerNetworks,
+  isConfiguredIndexerNetwork,
   type WdkAddressMap,
 } from "@/services/wdk/wdkIndexerGuardUtils";
 
@@ -31,10 +32,6 @@ const addressGuardInstalledFlag = Symbol.for(
 type CallMethodResponse = {
   result?: string | null;
 };
-
-function toNetwork(network: string): string {
-  return network === "bitcoin" ? "bitcoin" : network;
-}
 
 function parseCallMethodResult(response: CallMethodResponse) {
   if (!response.result) {
@@ -107,6 +104,14 @@ export function installWdkIndexerGuard() {
     [installedFlag]?: boolean;
     [addressGuardInstalledFlag]?: boolean;
     wdkManager?: {
+      getAddress?: (args: {
+        accountIndex: number;
+        network: string;
+      }) => Promise<{ address?: string | null }>;
+      getAbstractedAddress?: (args: {
+        accountIndex: number;
+        network: string;
+      }) => Promise<{ address?: string | null }>;
       callMethod?: (args: {
         accountIndex: number;
         args?: string;
@@ -129,8 +134,14 @@ export function installWdkIndexerGuard() {
     service.resolveWalletAddresses = async (enabledAssets, index = 0) => {
       const manager = service.wdkManager;
 
-      if (!manager?.callMethod) {
-        return resolveWalletAddresses(enabledAssets, index);
+      if (
+        !manager?.callMethod &&
+        !manager?.getAddress &&
+        !manager?.getAbstractedAddress
+      ) {
+        return filterConfiguredIndexerAddresses(
+          await resolveWalletAddresses(enabledAssets, index),
+        ) as Record<string, string | null>;
       }
 
       const networkAddresses: Record<string, string | null> = {};
@@ -143,16 +154,34 @@ export function installWdkIndexerGuard() {
         }
 
         for (const network of Object.keys(networks)) {
+          if (!isConfiguredIndexerNetwork(network)) {
+            continue;
+          }
+
           try {
-            const response = await manager.callMethod({
-              accountIndex: index,
-              methodName: "getAddress",
-              network: toNetwork(network),
-              options: JSON.stringify({ defaultValue: null }),
-            });
-            networkAddresses[network] = normalizeAddressResult(
-              parseCallMethodResult(response),
-            );
+            if (manager.getAddress || manager.getAbstractedAddress) {
+              const response =
+                network === "bitcoin"
+                  ? await manager.getAddress?.({
+                      accountIndex: index,
+                      network,
+                    })
+                  : await manager.getAbstractedAddress?.({
+                      accountIndex: index,
+                      network,
+                    });
+              networkAddresses[network] = response?.address ?? null;
+            } else if (manager.callMethod) {
+              const response = await manager.callMethod({
+                accountIndex: index,
+                methodName: "getAddress",
+                network,
+                options: JSON.stringify({ defaultValue: null }),
+              });
+              networkAddresses[network] = normalizeAddressResult(
+                parseCallMethodResult(response),
+              );
+            }
           } catch (error) {
             logger.warn("WDK address resolution failed", {
               error,
@@ -164,8 +193,9 @@ export function installWdkIndexerGuard() {
       }
 
       if (networkAddresses.ethereum) {
-        networkAddresses.polygon = networkAddresses.ethereum;
-        networkAddresses.arbitrum = networkAddresses.ethereum;
+        if (isConfiguredIndexerNetwork("polygon")) {
+          networkAddresses.polygon ??= networkAddresses.ethereum;
+        }
       }
 
       return networkAddresses;

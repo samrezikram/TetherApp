@@ -8,6 +8,10 @@ export function getSupportedIndexerNetworks() {
   return Array.from(supportedIndexerNetworks);
 }
 
+export function isConfiguredIndexerNetwork(network: string) {
+  return supportedIndexerNetworks.has(network);
+}
+
 export function filterConfiguredIndexerAddresses(addresses: WdkAddressMap) {
   return Object.entries(addresses).reduce<WdkAddressMap>(
     (filteredAddresses, [network, address]) => {

@@ -7,7 +7,11 @@ import { Button, Card, Screen, Text } from "@/design-system";
 
 export function ReceiveScreen() {
   const { addresses } = useWallet();
-  const firstAddress = Object.values(addresses ?? {})[0] ?? "";
+  const firstAddress =
+    Object.values(addresses ?? {}).find(
+      (address): address is string =>
+        typeof address === "string" && address.length > 0,
+    ) ?? "";
 
   function copyAddress() {
     Clipboard.setString(firstAddress);

@@ -21,6 +21,7 @@ import {
   setActiveWalletId,
   upsertRegisteredWallet,
 } from "@/services/wallets/walletRegistry";
+import { clearWdkRuntimeCaches } from "@/services/wdk/wdkRuntimeCache";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useWallet } from "@tetherto/wdk-react-native-provider";
@@ -68,6 +69,7 @@ export function WalletHomeScreen() {
     setIsBusy(true);
     try {
       await secureSession.unlock();
+      await clearWdkRuntimeCaches();
       await unlockWallet();
     } catch (error) {
       logger.warn("Wallet unlock rejected", error);
@@ -81,6 +83,7 @@ export function WalletHomeScreen() {
     try {
       const walletId = createWalletId();
       const mnemonic = generateSeedPhrase(seedPhraseLength);
+      await clearWdkRuntimeCaches();
       await createWallet({ mnemonic, name: walletName });
       await storeSecret(`wallet:${walletId}:mnemonic`, mnemonic, {
         requireBiometry: true,
@@ -122,6 +125,7 @@ export function WalletHomeScreen() {
       }
 
       await clearWallet();
+      await clearWdkRuntimeCaches();
       await createWallet({ mnemonic, name: selectedWallet.name });
       await setActiveWalletId(walletId);
       await refreshWalletBalance();

@@ -14,6 +14,7 @@ import {
   normalizeSeedPhrase,
   validateSeedPhrase,
 } from "@/services/wallets/seedPhrase";
+import { clearWdkRuntimeCaches } from "@/services/wdk/wdkRuntimeCache";
 
 export function ImportWalletScreen() {
   const navigation = useNavigation();
@@ -38,6 +39,7 @@ export function ImportWalletScreen() {
     setIsBusy(true);
     try {
       const walletId = createWalletId();
+      await clearWdkRuntimeCaches();
       await createWallet({ mnemonic: normalizedSeedPhrase, name });
       await storeSecret(`wallet:${walletId}:mnemonic`, normalizedSeedPhrase, {
         requireBiometry: true,
