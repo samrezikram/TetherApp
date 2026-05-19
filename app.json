@@ -29,7 +29,8 @@
         "expo-build-properties",
         {
           "android": {
-            "minSdkVersion": 29
+            "minSdkVersion": 29,
+            "useLegacyPackaging": true
           },
           "ios": {
             "deploymentTarget": "15.1"
