@@ -124,10 +124,32 @@ export function SendScreen() {
   const senderAddress = (addresses as Partial<Record<NetworkTypeId, string>> | undefined)?.[
     network
   ];
+  const canRequestFee = recipient.trim().length > 0 && amount.trim().length > 0;
+
+  function setRecipientValue(value: string) {
+    setRecipient(value);
+    setFee(null);
+    setFeeError(null);
+  }
+
+  function setAmountValue(value: string) {
+    setAmount(value);
+    setFee(null);
+    setFeeError(null);
+  }
 
   async function quote() {
     setFee(null);
     setFeeError(null);
+
+    if (!validation.valid) {
+      setFeeError(
+        validation.errors.recipient ??
+          validation.errors.amount ??
+          "Enter a valid recipient and amount.",
+      );
+      return;
+    }
 
     if (!wallet || !isUnlocked) {
       setFeeError("Unlock a wallet before estimating fees.");
@@ -177,7 +199,7 @@ export function SendScreen() {
             autoCapitalize="none"
             error={recipientError}
             label="Recipient"
-            onChangeText={setRecipient}
+            onChangeText={setRecipientValue}
             value={recipient}
           />
           <View style={{ flexDirection: "row", gap: 12 }}>
@@ -211,19 +233,26 @@ export function SendScreen() {
             error={amountError}
             keyboardType="decimal-pad"
             label="Amount"
-            onChangeText={setAmount}
+            onChangeText={setAmountValue}
             value={amount}
           />
           <View style={{ flexDirection: "row", gap: 12 }}>
             <Button onPress={() => setStep("recipient")} title="Back" variant="ghost" />
             <Button
-              disabled={!validation.valid}
+              disabled={!canRequestFee || isBusy}
               isLoading={isBusy}
               onPress={quote}
               title="Estimate Fee"
               variant="outline"
             />
           </View>
+          {recipientError ? (
+            <Alert
+              message={`${recipientError} Current network: ${network}.`}
+              title="Recipient needs review"
+              variant="warning"
+            />
+          ) : null}
           {feeError ? (
             <Alert
               message={feeError}
