@@ -11,19 +11,27 @@ const numberString = z
   .transform((value) => Number(value))
   .pipe(z.number().int().positive());
 
+const optionalNonEmptyString = z.preprocess(
+  (value) => (value === "" ? undefined : value),
+  z.string().min(1).optional(),
+);
+
 const EnvSchema = z.object({
   appEnv: z
     .enum(["development", "preview", "production", "test"])
     .default("development"),
   biometricTimeoutSeconds: numberString,
   enableTestnet: booleanString,
-  ethRpcUrl: z.string().url().optional(),
-  indexerApiKey: z.string().min(1).optional(),
+  ethRpcUrl: z.preprocess(
+    (value) => (value === "" ? undefined : value),
+    z.string().url().optional(),
+  ),
+  indexerApiKey: optionalNonEmptyString,
   indexerBaseUrl: z.string().url().default("https://wdk-api.tether.io"),
-  indexerPinOne: z.string().min(1).optional(),
-  indexerPinTwo: z.string().min(1).optional(),
-  tronApiKey: z.string().optional(),
-  tronApiSecret: z.string().optional(),
+  indexerPinOne: optionalNonEmptyString,
+  indexerPinTwo: optionalNonEmptyString,
+  tronApiKey: optionalNonEmptyString,
+  tronApiSecret: optionalNonEmptyString,
 });
 
 export const env = EnvSchema.parse({
