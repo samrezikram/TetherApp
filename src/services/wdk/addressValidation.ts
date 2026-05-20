@@ -1,4 +1,5 @@
 import type { NetworkTypeId } from "@/domain/wallet/types";
+import { EVM_NETWORKS } from "@/domain/wallet/constants";
 
 const evmAddress = /^0x[a-fA-F0-9]{40}$/;
 const bitcoinAddress =
@@ -38,12 +39,7 @@ export function isValidAddress(
     return false;
   }
 
-  if (
-    network === "ethereum" ||
-    network === "polygon" ||
-    network === "arbitrum" ||
-    network === "sepolia"
-  ) {
+  if ((EVM_NETWORKS as readonly NetworkTypeId[]).includes(network)) {
     return evmAddress.test(trimmed);
   }
 

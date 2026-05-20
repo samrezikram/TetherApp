@@ -5,31 +5,38 @@ import { Alert, View } from "react-native";
 import { useWallet } from "@tetherto/wdk-react-native-provider";
 import { Button, Card, Screen, Text } from "@/design-system";
 import type { NetworkTypeId } from "@/domain/wallet/types";
+import {
+  getDefaultAssetForNetwork,
+  RECEIVE_NETWORKS,
+} from "@/domain/wallet/constants";
 
-const supportedFundingNetworks: NetworkTypeId[] = [
-  "ethereum",
-  "polygon",
-  "bitcoin",
-];
-
-function getNetworkAsset(network: NetworkTypeId) {
-  return network === "bitcoin" ? "BTC" : "USDT";
-}
+type ReceiveRow = {
+  address: string;
+  asset: string;
+  network: NetworkTypeId;
+};
 
 export function ReceiveScreen() {
   const { addresses } = useWallet();
-  const receiveRows = supportedFundingNetworks
-    .map((network) => ({
-      address: (addresses as Partial<Record<NetworkTypeId, string>> | undefined)?.[
-        network
-      ],
-      asset: getNetworkAsset(network),
-      network,
-    }))
-    .filter(
-      (row): row is { address: string; asset: string; network: NetworkTypeId } =>
-        typeof row.address === "string" && row.address.length > 0,
-    );
+  const walletAddresses = addresses as
+    | Partial<Record<NetworkTypeId, string>>
+    | undefined;
+  const receiveRows = RECEIVE_NETWORKS.reduce<ReceiveRow[]>((rows, network) => {
+    const address = walletAddresses?.[network];
+
+    if (!address) {
+      return rows;
+    }
+
+    return [
+      ...rows,
+      {
+        address,
+        asset: getDefaultAssetForNetwork(network),
+        network,
+      },
+    ];
+  }, []);
 
   function copyAddress(address: string, network: NetworkTypeId) {
     Clipboard.setString(address);

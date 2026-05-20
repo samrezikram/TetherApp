@@ -10,6 +10,7 @@ describe("parseQrPayload", () => {
       parseQrPayload("0x742d35Cc6634C0532925a3b844Bc454e4438f44e"),
     ).toEqual({
       address: "0x742d35Cc6634C0532925a3b844Bc454e4438f44e",
+      asset: "USDT",
       network: "ethereum",
     });
   });
@@ -17,6 +18,7 @@ describe("parseQrPayload", () => {
   it("parses payment URI amount", () => {
     expect(parseQrPayload("ethereum:0xabc?amount=10")).toEqual({
       address: "0xabc",
+      asset: "USDT",
       amount: "10",
       network: "ethereum",
     });
@@ -25,6 +27,7 @@ describe("parseQrPayload", () => {
   it("normalizes EIP-681 addresses with chain ids", () => {
     expect(parseQrPayload("ethereum:0xabc@1?amount=2")).toEqual({
       address: "0xabc",
+      asset: "USDT",
       amount: "2",
       network: "ethereum",
     });

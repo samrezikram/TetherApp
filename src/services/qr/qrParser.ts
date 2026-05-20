@@ -1,4 +1,8 @@
 import type { AssetTickerId, NetworkTypeId } from "@/domain/wallet/types";
+import {
+  getDefaultAssetForNetwork,
+  getNetworkForQrScheme,
+} from "@/domain/wallet/constants";
 import { inferNetworkFromAddress } from "@/services/wdk/addressValidation";
 
 export type ParsedQrPayload = {
@@ -6,15 +10,6 @@ export type ParsedQrPayload = {
   asset?: AssetTickerId;
   amount?: string;
   network?: NetworkTypeId;
-};
-
-const networkByScheme: Partial<Record<string, NetworkTypeId>> = {
-  arbitrum: "arbitrum",
-  bitcoin: "bitcoin",
-  ethereum: "ethereum",
-  polygon: "polygon",
-  ton: "ton",
-  tron: "tron",
 };
 
 function normalizeAddress(address: string) {
@@ -26,7 +21,7 @@ export function parseQrPayload(payload: string): ParsedQrPayload {
 
   if (!trimmed.includes(":")) {
     const network = inferNetworkFromAddress(trimmed);
-    const asset = network === "bitcoin" ? "BTC" : undefined;
+    const asset = network ? getDefaultAssetForNetwork(network) : undefined;
 
     return {
       address: trimmed,
@@ -48,9 +43,11 @@ export function parseQrPayload(payload: string): ParsedQrPayload {
   const params = new URLSearchParams(query);
   const parsedAddress = normalizeAddress(address);
   const normalizedScheme = scheme.toLowerCase();
-  const network = networkByScheme[normalizedScheme] ?? inferNetworkFromAddress(parsedAddress);
+  const network =
+    getNetworkForQrScheme(normalizedScheme) ??
+    inferNetworkFromAddress(parsedAddress);
   const amount = params.get("amount") ?? undefined;
-  const asset = network === "bitcoin" ? "BTC" : undefined;
+  const asset = network ? getDefaultAssetForNetwork(network) : undefined;
 
   return {
     address: parsedAddress,

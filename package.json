@@ -3,7 +3,14 @@
   "version": "0.1.0",
   "private": true,
   "main": "node_modules/expo/AppEntry.js",
+  "packageManager": "npm@10.9.2",
+  "engines": {
+    "node": "22.17.1",
+    "npm": "10.9.2"
+  },
   "scripts": {
+    "env:check": "node scripts/check-env.js",
+    "preinstall": "node scripts/check-env.js",
     "start": "expo start --dev-client",
     "ios": "expo run:ios",
     "android": "expo run:android",

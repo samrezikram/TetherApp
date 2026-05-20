@@ -29,12 +29,14 @@ module.exports = [
   },
   js.configs.recommended,
   {
-    files: ["*.config.js", "babel.config.js", "metro.config.js"],
+    files: ["*.config.js", "babel.config.js", "metro.config.js", "scripts/*.js"],
     languageOptions: {
       ecmaVersion: "latest",
       globals: {
         __dirname: "readonly",
+        console: "readonly",
         module: "readonly",
+        process: "readonly",
         require: "readonly",
       },
       sourceType: "commonjs",

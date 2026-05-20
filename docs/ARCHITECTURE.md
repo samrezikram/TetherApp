@@ -15,6 +15,9 @@ iteration.
 - Secrets live behind `src/services/secure-storage`.
 - Session and biometric checks live under `src/services/biometric`.
 - Domain contracts live under `src/domain`.
+- Wallet network and default-asset constants live in
+  `src/domain/wallet/constants.ts` so receive, send, QR parsing, and validation
+  share the same assumptions.
 
 Screens may use WDK provider hooks for public wallet state, but signing and fee
 flows go through app-owned service functions so validation, session freshness,

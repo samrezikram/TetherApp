@@ -7,6 +7,7 @@ import type { RootStackParamList } from "@/app/navigation/types";
 import { Alert, Button, Card, Input, Screen, Text } from "@/design-system";
 import type { SendDraft } from "@/domain/transaction/types";
 import type { AssetTickerId, NetworkTypeId } from "@/domain/wallet/types";
+import { getDefaultAssetForNetwork } from "@/domain/wallet/constants";
 import { estimateSendFee } from "@/services/fees/feeService";
 import { sendTransaction } from "@/services/wdk/wdkService";
 import { logger } from "@/infrastructure/logging/logger";
@@ -22,10 +23,6 @@ type RouteParams = {
 };
 
 type SendStep = "recipient" | "amount" | "review" | "result";
-
-function getDefaultAsset(network: NetworkTypeId): AssetTickerId {
-  return network === "bitcoin" ? "BTC" : "USDT";
-}
 
 function inferNetworkFromWalletAddresses(
   address: string,
@@ -108,7 +105,7 @@ export function SendScreen() {
   const [amount, setAmount] = useState(params.amount ?? "");
   const [network, setNetwork] = useState<NetworkTypeId>(initialNetwork);
   const [asset, setAsset] = useState<AssetTickerId>(
-    params.asset ?? getDefaultAsset(initialNetwork),
+    params.asset ?? getDefaultAssetForNetwork(initialNetwork),
   );
   const [fee, setFee] = useState<string | null>(null);
   const [feeError, setFeeError] = useState<string | null>(null);
@@ -145,7 +142,7 @@ export function SendScreen() {
     }
 
     if (params.asset !== undefined || params.network !== undefined || inferredNetwork) {
-      setAsset(params.asset ?? getDefaultAsset(nextNetwork));
+      setAsset(params.asset ?? getDefaultAssetForNetwork(nextNetwork));
     }
 
     if (params.recipient !== undefined || params.amount !== undefined) {
