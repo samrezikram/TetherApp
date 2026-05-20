@@ -19,20 +19,9 @@ funding, and controlled send testing are still required before release.
 
 ## Demo Videos
 
-<table>
-  <tr>
-    <th>iOS</th>
-    <th>Android</th>
-  </tr>
-  <tr>
-    <td>
-      <video src="docs/media/iOSWDKWalletRec.mov" controls width="280"></video>
-    </td>
-    <td>
-      <video src="docs/media/androidWDKWalletRec.mov" controls width="280"></video>
-    </td>
-  </tr>
-</table>
+| iOS | Android |
+| --- | --- |
+| [Watch iOS demo](docs/media/iOSWDKWalletRec.mp4) | [Watch Android demo](docs/media/androidWDKWalletRec.mp4) |
 
 ## Environment Lock
 
