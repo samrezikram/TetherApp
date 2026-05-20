@@ -146,7 +146,7 @@ The security model is intentionally conservative:
 
 Important future hardening work:
 
-- Complete iOS device testing.
+- Keep Android and iOS device verification in the release checklist.
 - Finalize production certificate pins.
 - Run send/receive on testnet or with controlled low-value mainnet funds.
 - Add E2E coverage for create/import/delete/switch/send with Maestro.
@@ -226,4 +226,4 @@ For a production rebuild, I would evaluate two alternatives:
 
 I would make that migration only after a short spike comparing wallet creation,
 address resolution, fee quotes, send, balances, indexer integration, Android
-release build, and iOS device behavior.
+release build, and iOS release behavior.

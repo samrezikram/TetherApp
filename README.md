@@ -10,9 +10,9 @@ balance views, and WDK Indexer transaction history.
 ## Purpose
 
 This project demonstrates how to build a secure mobile wallet around WDK while
-keeping custody-sensitive behavior out of the UI layer. The current build is
-ready for Android validation and still needs final iOS device verification,
-production WDK credentials, real chain funding, and send testing before release.
+keeping custody-sensitive behavior out of the UI layer. The current build has
+been verified on Android and iOS. Production WDK credentials, real chain
+funding, and controlled send testing are still required before release.
 
 ## Demo Videos
 
@@ -41,6 +41,9 @@ Node does not match because `.npmrc` enables `engine-strict`.
 | Java/JDK | `21.0.1` |
 | CocoaPods | `1.16.2` |
 | Xcode | `26.5` |
+
+These versions are the known working mobile toolchain for the verified Android
+and iOS builds.
 
 Check your machine:
 
@@ -183,6 +186,6 @@ For a production rebuild, run a short spike comparing:
 - send flow
 - indexer balances/history
 - Android release build
-- iOS device behavior
+- iOS release behavior
 
 That migration may reduce unused chain imports and Bare thread complexity.
