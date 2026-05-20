@@ -7,6 +7,9 @@ The app supports biometric unlock, wallet creation/import, multi-wallet
 management, receive QR/copy, QR scanning, send preparation with fee checks,
 balance views, and WDK Indexer transaction history.
 
+The UI follows the device light/dark appearance and uses Tether-green primary
+and success states through centralized design tokens.
+
 ## Purpose
 
 This project demonstrates how to build a secure mobile wallet around WDK while
@@ -16,18 +19,20 @@ funding, and controlled send testing are still required before release.
 
 ## Demo Videos
 
-Add final screen recordings here before submitting:
-
-- iOS demo: `docs/media/ios-demo.mp4`
-- Android demo: `docs/media/android-demo.mp4`
-
-Recommended recording commands:
-
-```sh
-xcrun simctl io booted recordVideo docs/media/ios-demo.mp4
-adb shell screenrecord /sdcard/android-demo.mp4
-adb pull /sdcard/android-demo.mp4 docs/media/android-demo.mp4
-```
+<table>
+  <tr>
+    <th>iOS</th>
+    <th>Android</th>
+  </tr>
+  <tr>
+    <td>
+      <video src="docs/media/iOSWDKWalletRec.mov" controls width="280"></video>
+    </td>
+    <td>
+      <video src="docs/media/androidWDKWalletRec.mov" controls width="280"></video>
+    </td>
+  </tr>
+</table>
 
 ## Environment Lock
 
